@@ -1,0 +1,55 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+    <h2>New post</h2>
+
+    <form method="POST" class="post-form">{% csrf_token %}
+
+        <p>
+            <label for="id_title"></label>
+            {% if form.title.value is None %}
+                <input id="id_title" class="subject" type="text" name="title">
+            {% else %}
+                <input id="id_title" class="subject" type="text" name="title" value="{{ form.title.value }}">
+            {% endif %}
+        </p>
+
+        <div id="editor">
+            <label for="id_raw_markdown"></label>
+            <textarea name="raw_markdown" id="id_raw_markdown" v-bind:value="input" v-on:input="update"></textarea>
+            <div v-html="compiledMarkdown"></div>
+            <input type="hidden" v-bind:value="compiledMarkdown" name="compiled_markdown">
+        </div>
+
+        <button type="submit" class="save btn btn-default">Save</button>
+
+    </form>
+
+
+<script>
+    {% if form.raw_markdown.value is None %}
+        var body = "# Hello";
+    {% else %}
+        var body = `{{ form.raw_markdown.value|escapejs }}`; // ``は複数行文字列
+    {% endif %}
+    new Vue({
+        el: "#editor",
+        data: {
+            input: body,
+        },
+        computed: {
+            compiledMarkdown: function() {
+                var html = marked(this.input);
+                return DOMPurify.sanitize(html);
+            }
+        },
+        methods: {
+          update: _.debounce(function(event) {
+            this.input = event.target.value;
+          }, wait=150)
+        }
+      });
+</script>
+
+{% endblock %}
+
